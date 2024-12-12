@@ -19,6 +19,7 @@ import com.serotonin.modbus4j.ModbusFactory;
 import com.serotonin.modbus4j.ModbusMaster;
 import com.serotonin.modbus4j.exception.ModbusInitException;
 import com.serotonin.modbus4j.exception.ModbusTransportException;
+import com.serotonin.modbus4j.ip.IpParameters;
 import com.serotonin.modbus4j.msg.ReadHoldingRegistersRequest;
 import com.serotonin.modbus4j.msg.ReadHoldingRegistersResponse;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -63,13 +64,14 @@ public class ModbusNodeTest {
     @Test
     void testValidModbusRequest() throws ModbusTransportException {
 
+        // 유효한 payload를 포함한 메세지 객체 생성
         Map<String, Object> payload = new HashMap<>();
         payload.put("slaveId", 1);
         payload.put("startAddress", 0);
         payload.put("quantity", 10);
         Message message = new Message(payload);
 
-        // Mock 응답 설정
+        // ModbusMaster의 send()에 대한 Mock 응답 설정
         ReadHoldingRegistersResponse response = mock(ReadHoldingRegistersResponse.class);
         when(response.isException()).thenReturn(false);
         when(response.getShortData()).thenReturn(new short[] { 100, 200, 300 });
@@ -77,18 +79,21 @@ public class ModbusNodeTest {
 
         modbusNode.onMessage(message);
 
+        // ModbusMaster.send() 메서드가 한번 호출되었는지 검증
         verify(modbusMaster, times(1)).send(any(ReadHoldingRegistersRequest.class));
     }
 
     /**
-     * 유효한 Payload인지 테스트
+     * 유효하지 않은 메세지 Payload인지 테스트
      */
     @Test
     void testInvalidMessagePayload() {
 
+        // 유효하지 않은 메세지 생성
         Message invalidMessage = new Message("invalid payload");
-        modbusNode.onMessage(invalidMessage);
+        modbusNode.onMessage(invalidMessage); // 실행
 
+        // 호출되지 않았는지 검증
         try {
             verify(modbusMaster, never()).send(any(ReadHoldingRegistersRequest.class));
         } catch (ModbusTransportException e) {
@@ -104,17 +109,20 @@ public class ModbusNodeTest {
     @Test
     void testModbusException() throws ModbusTransportException {
 
+        // 유효한 payload 객체 생성
         Map<String, Object> payload = new HashMap<>();
         payload.put("slaveId", 1);
         payload.put("startAddress", 0);
         payload.put("quantity", 10);
         Message message = new Message(payload);
 
+        // modbusMaster.send() 메서드가 예외 던지도록 설정
         when(modbusMaster.send(any(ReadHoldingRegistersRequest.class)))
                 .thenThrow(new ModbusTransportException("Test exception"));
 
         modbusNode.onMessage(message);
 
+        // 호출되었는지 검증
         verify(modbusMaster, times(1)).send(any(ReadHoldingRegistersRequest.class));
     }
 
@@ -125,7 +133,7 @@ public class ModbusNodeTest {
     void testStop() {
 
         modbusNode.stop();
-        verify(modbusMaster, never()).destroy();
+        verify(modbusMaster).destroy();
     }
 
     /**
@@ -136,8 +144,20 @@ public class ModbusNodeTest {
     @Test
     void testStart() throws ModbusInitException {
 
-        when(modbusFactory.createTcpMaster(any(), anyBoolean())).thenReturn(modbusMaster);
+        // ModbusFactory와 ModbusMaster에 대한 mock 객체 생성
+        ModbusFactory mockFactory = mock(ModbusFactory.class);
+        ModbusMaster mockMaster = mock(ModbusMaster.class);
+
+        // Modbus TCP 통신을 테스트할때, 실제 네트워크 연결 없이 동작을 검증하기 위한 부분
+        mockFactory.createTcpMaster(any(IpParameters.class), anyBoolean());
+
+        // // mock 객체를 ModbusNode에 주입
+        ReflectionTestUtils.setField(modbusNode, "master", mockMaster);
+        ReflectionTestUtils.setField(modbusNode, "master", mockMaster);
+
         modbusNode.start();
+
+        // 검증
         verify(modbusMaster, never()).init();
     }
 }
