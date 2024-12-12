@@ -19,12 +19,11 @@ public abstract class OutNode extends Node {
     public OutNode() {
         super();
     }
-    
 
     public OutNode(UUID id) {
         super(id);
     }
-    
+
     public OutNode(String uuid) {
         super(uuid);
     }
@@ -50,10 +49,9 @@ public abstract class OutNode extends Node {
      * @throws UnsupportedOperationException 항상 발생
      */
     @Override
-    public final void onMessage(Message message) {
+    public void onMessage(Message message) {
         throw new UnsupportedOperationException("Output node cannot receive messages");
     }
-
 
     public void addPipe(Pipe pipe) {
         outputPipes.add(pipe);
