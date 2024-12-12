@@ -7,9 +7,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.List;
 
 import com.samsa.core.InNode;
 import com.samsa.core.Message;
+import com.samsa.core.Pipe;
 
 /**
  * TcpOutNode 클래스
@@ -106,7 +108,9 @@ public class TcpOutNode extends InNode {
                 Message newMessage = new Message(receivedData);
 
                 // 연결된 파이프를 통해 메시지를 전송합니다.
-                for (var pipe : getPipes()) {
+                List<Pipe> pipes = getPipes(); // 반환 값을 변수에 저장
+                for (int i = 0; i < pipes.size(); i++) {
+                    Pipe pipe = pipes.get(i);
                     pipe.send(newMessage);
                 }
             }
@@ -134,3 +138,34 @@ public class TcpOutNode extends InNode {
         this.port = port;
     }
 }
+/**
+ * // 사용예시
+ * 
+ * public static void main(String[] args) {
+ * // TcpOutNode 생성
+ * TcpOutNode tcpOutNode = new TcpOutNode("node1", 8080); // 8080번 포트에서 수신 대기
+ * 
+ * // TcpOutNode 시작
+ * try {
+ * tcpOutNode.start(); // 노드 시작
+ * System.out.println("TCP 서버가 시작되었습니다. 클라이언트를 기다리는 중입니다...");
+ * 
+ * // 메시지 수신 시 동작 설정 (Optional, 필요에 따라 구현 가능)
+ * tcpOutNode.setOnMessageListener(message -> {
+ * // 메시지 수신 시 처리할 로직
+ * System.out.println("수신된 메시지: " + message.getPayload());
+ * });
+ * 
+ * // 서버를 계속 실행하도록 유지
+ * System.out.println("서버가 실행 중입니다. 종료하려면 Ctrl+C를 누르세요.");
+ * Thread.sleep(Long.MAX_VALUE); // 무한 대기
+ * } catch (Exception e) {
+ * e.printStackTrace();
+ * } finally {
+ * // TcpOutNode 종료
+ * tcpOutNode.stop();
+ * System.out.println("TCP 서버가 종료되었습니다.");
+ * }
+ * }
+ * }
+ */

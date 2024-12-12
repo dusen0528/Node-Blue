@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 
-import javax.net.ssl.SSLSocketFactory;
-
 import com.samsa.core.Message;
 import com.samsa.core.OutNode;
 
@@ -14,11 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * {@code TcpInNode} 클래스는 TCP connect을 통해 데이터를 전송하는 출력을 생성하는 노드입니다.
  * 이 노드는 {@link OutNode}를 확장하여 TCP connect을 통한 데이터 전송 기능을 구현합니다.
- * 
- * <p>
- * 일반적으로 Node-RED의 {@code TcpIn}은 입력 노드이지만,
- * 이 구현에서는 출력을 담당하는 노드로 간주됩니다.
- * </p>
  */
 @Slf4j
 public class TcpInNode extends OutNode {
@@ -28,8 +21,6 @@ public class TcpInNode extends OutNode {
     private int port;
     /** connect 종류 ("대기" 또는 "connect") */
     private String connectionType;
-    /** SSL/TLS 활성화 여부 */
-    private boolean useSSL;
     /** 출력 형식 ("stream" 또는 "바이너리 버퍼") */
     private String outputFormat;
     /** 메시지의 토픽 */
@@ -52,9 +43,7 @@ public class TcpInNode extends OutNode {
         super(id); // OutNode의 기본 생성자 호출
         this.host = host;
         this.port = port;
-        this.connectionType = "connect"; // 기본값은 클라이언트 모드
-        this.useSSL = false; // 기본적으로 SSL 비활성화
-        this.outputFormat = "stream"; // 기본 출력 형식
+
     }
 
     /**
@@ -67,17 +56,7 @@ public class TcpInNode extends OutNode {
     public void start() {
         super.start();
         try {
-            if ("connect".equals(connectionType)) {
-                // 클라이언트 소켓
-                if (useSSL) {
-                    SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-                    socket = factory.createSocket(host, port);
-                } else {
-                    socket = new Socket(host, port);
-                }
-            } else if ("waiting".equals(connectionType)) {
-                throw new UnsupportedOperationException("대기 모드는 아직 구현되지 않았습니다.");
-            }
+            // 소켓이 연결된 후 출력 스트림을 얻습니다.
             outputStream = socket.getOutputStream();
             log.info("TcpInNode[{}] 연결됨 - {}:{}", getId(), host, port);
         } catch (IOException e) {
@@ -167,14 +146,6 @@ public class TcpInNode extends OutNode {
         this.connectionType = connectionType;
     }
 
-    public boolean isUseSSL() {
-        return useSSL;
-    }
-
-    public void setUseSSL(boolean useSSL) {
-        this.useSSL = useSSL;
-    }
-
     public String getOutputFormat() {
         return outputFormat;
     }
@@ -190,35 +161,4 @@ public class TcpInNode extends OutNode {
     public void setTopic(String topic) {
         this.topic = topic;
     }
-
-    // 이름 getter,setter 설정 필요할까?
 }
-
-/**
- * // TcpInNode 생성
- * TcpInNode tcpInNode = new TcpInNode("node1", "127.0.0.1", 8080);
- * 
- * // 설정
- * tcpInNode.setConnectionType("connect"); // connect 모드
- * tcpInNode.setUseSSL(false); // SSL 비활성화
- * tcpInNode.setOutputFormat("stream"); // stream 형식으로 출력
- * tcpInNode.setTopic("exampleTopic"); // 토픽 설정
- * 
- * try {
- * // 노드 시작
- * tcpInNode.start();
- * 
- * // 메시지 전송
- * Message message = new Message("1", "Hello, TCP Server!", null);
- * tcpInNode.emit(message);
- * 
- * // 추가 메시지 전송
- * Message anotherMessage = new Messa ge("2", "Another message.", null);
- * tcpInNode.emit(anotherMessage);
- * 
- * } catch (Exception e) {
- * e.printStackTrace();
- * } finally {
- * // 노드 중지
- * tcpInNode.stop();
- */
