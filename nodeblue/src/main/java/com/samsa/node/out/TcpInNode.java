@@ -4,163 +4,221 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 
+import javax.net.ssl.SSLSocketFactory;
+
 import com.samsa.core.Message;
 import com.samsa.core.OutNode;
 
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * TcpInNode 클래스
+ * {@code TcpInNode} 클래스는 TCP connect을 통해 데이터를 전송하는 출력을 생성하는 노드입니다.
+ * 이 노드는 {@link OutNode}를 확장하여 TCP connect을 통한 데이터 전송 기능을 구현합니다.
  * 
- * 이 클래스는 OutNode를 확장하여 TCP 연결을 통해 데이터를 전송하는 노드의 동작을 정의합니다.
- * 일반적으로 Node-RED의 TcpIn은 입력 노드이지만,
- * 이 구현에서는 Output 노드로 간주됩니다.
+ * <p>
+ * 일반적으로 Node-RED의 {@code TcpIn}은 입력 노드이지만,
+ * 이 구현에서는 출력을 담당하는 노드로 간주됩니다.
+ * </p>
  */
 @Slf4j
 public class TcpInNode extends OutNode {
-    private String host; // 연결할 TCP 서버의 호스트 주소 (예: 127.0.0.1)
-    private int port; // 연결할 포트 번호 (예: 8080)
-    private Socket socket; // TCP 소켓 객체로 서버와의 연결을 나타냅니다.
-    private OutputStream outputStream; // TCP 데이터를 보내기 위한 출력 스트림
+    /** TCP 서버의 호스트 주소 */
+    private String host;
+    /** TCP 서버의 포트 번호 */
+    private int port;
+    /** connect 종류 ("대기" 또는 "connect") */
+    private String connectionType;
+    /** SSL/TLS 활성화 여부 */
+    private boolean useSSL;
+    /** 출력 형식 ("stream" 또는 "바이너리 버퍼") */
+    private String outputFormat;
+    /** 메시지의 토픽 */
+    private String topic;
+    /** 사용자 정의 이름 */
+    private String name;
+    /** TCP 소켓 인스턴스 */
+    private Socket socket;
+    /** TCP 데이터를 전송하는 출력 stream */
+    private OutputStream outputStream;
 
     /**
-     * 생성자
+     * {@code TcpInNode}의 생성자.
      * 
-     * @param id   노드의 고유 식별자 (Node ID)
-     * @param host TCP 서버의 호스트 주소
-     * @param port TCP 서버의 포트 번호
-     * 
-     *             OutNode의 생성자를 호출하여 id를 설정하고,
-     *             host 및 port를 초기화합니다.
+     * @param id   노드의 고유 식별자
+     * @param host connect할 TCP 서버의 호스트 주소 (예: 127.0.0.1)
+     * @param port connect할 TCP 서버의 포트 번호 (예: 8080)
      */
     public TcpInNode(String id, String host, int port) {
-        super(id); // 부모 클래스 OutNode의 생성자를 호출
-        this.host = host; // TCP 연결할 호스트 주소를 초기화
-        this.port = port; // TCP 연결할 포트 번호를 초기화
-    }
-
-    private void reconnect() {
-        stop();
-        start();
+        super(id); // OutNode의 기본 생성자 호출
+        this.host = host;
+        this.port = port;
+        this.connectionType = "connect"; // 기본값은 클라이언트 모드
+        this.useSSL = false; // 기본적으로 SSL 비활성화
+        this.outputFormat = "stream"; // 기본 출력 형식
     }
 
     /**
-     * 노드 시작 메소드
-     * 
-     * OutNode의 start() 메소드를 호출하여 노드를 시작한 후,
-     * TCP 서버에 연결. 연결이 성공하면 소켓과 출력 스트림을 초기화.
+     * 노드를 시작합니다.
+     * <p>
+     * TCP 서버와 연결을 설정하고, 소켓과 출력 stream을 초기화합니다.
+     * </p>
      */
     @Override
     public void start() {
-        super.start(); // 부모 클래스의 start 메소드 호출
+        super.start();
         try {
-            // 호스트와 포트를 사용하여 TCP 서버에 연결
-            socket = new Socket(host, port);
-            outputStream = socket.getOutputStream(); // 소켓의 출력 스트림을 가져옵니다.
-            log.info("TcpInNode[{}]와 연결되었습니다. {}:{}", getId(), host, port);
+            if ("connect".equals(connectionType)) {
+                // 클라이언트 소켓
+                if (useSSL) {
+                    SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+                    socket = factory.createSocket(host, port);
+                } else {
+                    socket = new Socket(host, port);
+                }
+            } else if ("waiting".equals(connectionType)) {
+                throw new UnsupportedOperationException("대기 모드는 아직 구현되지 않았습니다.");
+            }
+            outputStream = socket.getOutputStream();
+            log.info("TcpInNode[{}] 연결됨 - {}:{}", getId(), host, port);
         } catch (IOException e) {
-            // 연결에 실패한 경우 에러 상태로 전환하고 로그에 기록.
             handleError(e);
-            reconnect();
         }
     }
 
     /**
-     * 노드 중지 메소드
-     * 
-     * OutNode의 stop() 메소드를 호출한 후,
-     * 소켓과 출력 스트림을 닫아 연결을 해제.
+     * 노드를 중지합니다.
+     * <p>
+     * 연결된 소켓과 출력 stream을 닫아 연결을 해제합니다.
+     * </p>
      */
     @Override
     public void stop() {
-        super.stop(); // 부모 클래스의 stop 메소드 호출
+        super.stop();
         try {
-            // 출력 스트림을 닫습니다.
             if (outputStream != null) {
                 outputStream.close();
             }
-            // TCP 소켓을 닫습니다.
             if (socket != null) {
                 socket.close();
             }
-            log.info("TcpInNode[{}] 연결이 끊겼습니다", getId());
+            log.info("TcpInNode[{}] connect 종료됨", getId());
         } catch (IOException e) {
-            // 소켓이나 스트림을 닫는 중에 발생한 예외를 처리.
             handleError(e);
         }
     }
 
     /**
-     * 메시지를 TCP 연결을 통해 전송하는 메소드
+     * 메시지를 TCP connect을 통해 전송합니다.
      * 
      * @param message 전송할 메시지 객체
-     * 
-     *                메세지의 본문을 바이트 배열로 변환하여 소켓의 출력 스트림으로 전송합니다.
      */
     @Override
     public void emit(Message message) {
-        super.emit(message); // 부모 클래스의 emit 메소드 호출
-        // 소켓 연결이 닫혀 있거나 연결되지 않은 경우 경고 메시지를 기록합니다.
+        super.emit(message);
         if (socket == null || socket.isClosed() || !socket.isConnected()) {
-            log.warn("TcpInNode[{}] 소켓이 연결되지 않았습니다.", getId());
-            reconnect();
-
+            log.warn("TcpInNode[{}] 소켓이 연결되지 않음", getId());
+            return;
         }
         try {
-            // 메시지의 본문을 바이트 배열로 변환합니다.
-            byte[] messageBytes = new byte[2048];
-            /**
-             * message.getBody() 그러나 Message 클래스 선언필요
-             * 이유는 바이트 단위로 한정지으면 원하는 메시지가 전송이 안되고 바이트 단위로만 갈수도 있기때문
-             */
-            // test
-            // 바이트 데이터를 출력 스트림으로 전송합니다.
-            if (messageBytes != null && messageBytes.length > 0) {
+            byte[] messageBytes;
+            if ("binary buffer".equals(outputFormat)) {
+                // 바이너리 형식으로 메시지를 변환
+                messageBytes = message.getPayloadAsBinary();
+            } else {
+                // 문자열(stream) 형식으로 메시지를 변환
+                messageBytes = message.getPayload().toString().getBytes();
+            }
+
+            if (messageBytes.length > 0) {
                 outputStream.write(messageBytes);
-                outputStream.flush(); // 출력 버퍼에 남아 있는 데이터를 강제로 전송합니다.
-                log.info("TcpInNode[{}] 메시지 전송: {}", getId(), messageBytes);
+                outputStream.flush();
+                log.info("TcpInNode[{}] 메시지 전송: {}", getId(), new String(messageBytes));
+            } else {
+                throw new IndexOutOfBoundsException("메시지는 최소 1바이트 이상이어야 합니다.");
             }
         } catch (IOException e) {
-            // 전송 중에 오류가 발생하면 에러 상태로 전환하고 로그에 기록합니다.
             handleError(e);
-            reconnect();
         }
     }
 
-    // getter setter 설정
-    /**
-     * 호스트 주소를 반환하는 getter 메소드
-     * 
-     * @return TCP 서버의 호스트 주소
-     */
+    // Getter 및 Setter 추가
+
     public String getHost() {
         return host;
     }
 
-    /**
-     * 호스트 주소를 설정하는 setter 메소드
-     * 
-     * @param host TCP 서버의 호스트 주소
-     */
     public void setHost(String host) {
         this.host = host;
     }
 
-    /**
-     * 포트 번호를 반환하는 getter 메소드
-     * 
-     * @return TCP 서버의 포트 번호
-     */
     public int getPort() {
         return port;
     }
 
-    /**
-     * 포트 번호를 설정하는 setter 메소드
-     * 
-     * @param port TCP 서버의 포트 번호
-     */
     public void setPort(int port) {
         this.port = port;
     }
+
+    public String getConnectionType() {
+        return connectionType;
+    }
+
+    public void setConnectionType(String connectionType) {
+        this.connectionType = connectionType;
+    }
+
+    public boolean isUseSSL() {
+        return useSSL;
+    }
+
+    public void setUseSSL(boolean useSSL) {
+        this.useSSL = useSSL;
+    }
+
+    public String getOutputFormat() {
+        return outputFormat;
+    }
+
+    public void setOutputFormat(String outputFormat) {
+        this.outputFormat = outputFormat;
+    }
+
+    public String getTopic() {
+        return topic;
+    }
+
+    public void setTopic(String topic) {
+        this.topic = topic;
+    }
+
+    // 이름 getter,setter 설정 필요할까?
 }
+
+/**
+ * // TcpInNode 생성
+ * TcpInNode tcpInNode = new TcpInNode("node1", "127.0.0.1", 8080);
+ * 
+ * // 설정
+ * tcpInNode.setConnectionType("connect"); // connect 모드
+ * tcpInNode.setUseSSL(false); // SSL 비활성화
+ * tcpInNode.setOutputFormat("stream"); // stream 형식으로 출력
+ * tcpInNode.setTopic("exampleTopic"); // 토픽 설정
+ * 
+ * try {
+ * // 노드 시작
+ * tcpInNode.start();
+ * 
+ * // 메시지 전송
+ * Message message = new Message("1", "Hello, TCP Server!", null);
+ * tcpInNode.emit(message);
+ * 
+ * // 추가 메시지 전송
+ * Message anotherMessage = new Messa ge("2", "Another message.", null);
+ * tcpInNode.emit(anotherMessage);
+ * 
+ * } catch (Exception e) {
+ * e.printStackTrace();
+ * } finally {
+ * // 노드 중지
+ * tcpInNode.stop();
+ */
