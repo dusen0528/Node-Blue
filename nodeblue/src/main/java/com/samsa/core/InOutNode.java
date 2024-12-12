@@ -3,6 +3,7 @@ package com.samsa.core;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 입력을 받아서 처리하고 출력을 생성하는 노드의 추상 클래스입니다.
@@ -13,14 +14,19 @@ public abstract class InOutNode extends Node {
     private final List<Pipe> inputPipes = new ArrayList<>();
     /** 출력 파이프들의 리스트 */
     private final List<Pipe> outputPipes = new ArrayList<>();
+    
 
-    /**
-     * InOutNode를 생성합니다.
-     *
-     * @param id 노드의 고유 식별자
-     */
-    protected InOutNode(String id) {
-        this.id = id;
+    public InOutNode() {
+        super();
+    }
+    
+
+    public InOutNode(UUID id) {
+        super(id);
+    }
+    
+    public InOutNode(String uuid) {
+        super(uuid);
     }
 
     /**

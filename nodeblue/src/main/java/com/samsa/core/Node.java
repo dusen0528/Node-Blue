@@ -1,5 +1,7 @@
 package com.samsa.core;
 
+import java.util.UUID;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -9,10 +11,29 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class Node {
     /** 노드의 고유 식별자 */
-    protected String id;
+    protected UUID id;
     
     /** 노드의 현재 상태 */
     protected NodeStatus status = NodeStatus.CREATED;
+    
+
+    public Node() {
+        this.id = UUID.randomUUID();
+    }
+    
+
+    public Node(UUID id) {
+        this.id = id;
+    }
+    
+    public Node(String uuid) {
+        try{
+            this.id = UUID.fromString(uuid);
+        } catch (IllegalArgumentException e) {
+        
+        throw e;
+    }
+    }
 
     /**
      * 메시지를 처리하는 추상 메서드입니다.
@@ -50,12 +71,12 @@ public abstract class Node {
     }
 
     
-    public String getId() {
+    public UUID getId() {
         return id;
     }
 
     public void setId(String id) {
-        this.id = id;
+        this.id = UUID.fromString(id);
     }   
 }
 

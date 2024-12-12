@@ -51,6 +51,7 @@
             <version>1.4.11</version>
         </dependency>
 
+<<<<<<< HEAD
 
         <!-- https://mvnrepository.com/artifact/com.infiniteautomation/modbus4j -->
         <dependency>
@@ -66,11 +67,14 @@
             <version>1.2.9.4</version>
         </dependency>
 
+=======
+>>>>>>> 5b712815efeeef37306cd46e80d8f7fc87426769
         <dependency>
             <groupId>org.eclipse.paho</groupId>
             <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
             <version>1.2.5</version>
         </dependency>
+<<<<<<< HEAD
 
         <dependency>
             <groupId>org.mockito</groupId>
@@ -80,4 +84,20 @@
 
 
         </dependencies>
+=======
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>5.8.2</version>
+        <scope>test</scope>
+    </dependency>
+
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>5.8.2</version>
+        <scope>test</scope>
+    </dependency>
+    </dependencies>
+>>>>>>> 5b712815efeeef37306cd46e80d8f7fc87426769
 </project>
