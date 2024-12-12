@@ -3,14 +3,12 @@ package com.samsa.node.in;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.samsa.core.InNode;
+import com.samsa.core.InOutNode;
 import com.samsa.core.Message;
-import com.samsa.core.Pipe;
-
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class ModbusToMqtt extends InNode {
+public class ModbusToMqtt extends InOutNode {
     private final String topic;
 
     /**
@@ -40,9 +38,7 @@ public class ModbusToMqtt extends InNode {
 
                 // 변환된 데이터를 다음 노드로 전달
                 Message mqttmessage = new Message(mqttData);
-                for (Pipe pipe : getPipes()) {
-                    pipe.send(mqttmessage);
-                }
+                emit(mqttmessage);
                 log.info("ModbusInNode[{}]: Converted and Forwarded data", id);
             } catch (Exception e) {
                 log.error("Error converting data to MQTT format: ", e);
