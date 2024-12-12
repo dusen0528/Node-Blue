@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class DebugNode extends InNode {
+    /** 로깅 활성화 상태를 나타내는 플래그 */
+    private boolean enabled = true;
 
     /**
      * 새로운 DebugNode를 생성합니다.
@@ -29,8 +31,10 @@ public class DebugNode extends InNode {
      */
     @Override
     public void onMessage(Message message) {
-        String payload = message.getPayload().toString();
-        log.info("Node[{}] - Payload: {}", getId(), payload);
+        if (enabled) {
+            String payload = message.getPayload().toString();
+            log.info("Node[{}] - Payload: {}", getId(), payload);
+        }
     }
 
     /**
