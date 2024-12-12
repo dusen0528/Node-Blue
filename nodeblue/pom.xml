@@ -13,6 +13,21 @@
         <maven.compiler.target>17</maven.compiler.target>
     </properties>
 
+     <repositories>
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+                <checksumPolicy>ignore</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>modbus-data-source</id>
+            <name>Modbus Dependencies</name>
+            <url>https://maven.mangoautomation.net/repository/ias-release/</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <!-- SLF4J Logger API -->
         <dependency>
@@ -35,5 +50,23 @@
             <artifactId>logback-classic</artifactId>
             <version>1.4.11</version>
         </dependency>
-    </dependencies>
+
+
+        <!-- https://mvnrepository.com/artifact/com.infiniteautomation/modbus4j -->
+        <dependency>
+            <groupId>com.infiniteautomation</groupId>
+            <artifactId>modbus4j</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>com.intelligt.modbus</groupId>
+            <artifactId>jlibmodbus</artifactId>
+            <version>1.2.9.4</version>
+        </dependency>
+
+
+
+        </dependencies>
 </project>
