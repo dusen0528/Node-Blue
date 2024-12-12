@@ -6,6 +6,7 @@ import com.samsa.core.OutNode;
 import lombok.extern.slf4j.Slf4j;
 import com.serotonin.modbus4j.ModbusFactory;
 import com.serotonin.modbus4j.ModbusMaster;
+import com.serotonin.modbus4j.exception.ModbusInitException;
 import com.serotonin.modbus4j.exception.ModbusTransportException;
 import com.serotonin.modbus4j.ip.IpParameters;
 import com.serotonin.modbus4j.msg.ReadHoldingRegistersRequest;
@@ -21,6 +22,8 @@ import java.util.Map;
 public class ModbusNode extends OutNode {
 
     private ModbusMaster master;
+    private final String slaveAddress;
+    private final int port;
 
     /**
      * ModbusNode를 생성
@@ -30,13 +33,27 @@ public class ModbusNode extends OutNode {
      */
     public ModbusNode(String id, String slaveAddress, int port) {
         super(id);
-        // Modbus master의 IP 구성
-        IpParameters params = new IpParameters();
-        params.setHost(slaveAddress);
-        params.setPort(port);
+        this.slaveAddress = slaveAddress;
+        this.port = port;
+    }
 
-        ModbusFactory factory = new ModbusFactory();
-        this.master = factory.createTcpMaster(params, false);
+    /**
+     * Modbus 마스터 연결을 초기화하고 시작합니다.
+     */
+    @Override
+    public void start() {
+        try {
+            IpParameters params = new IpParameters();
+            params.setHost(slaveAddress);
+            params.setPort(port);
+
+            ModbusFactory factory = new ModbusFactory();
+            master = factory.createTcpMaster(params, false);
+            master.init();
+            log.info("ModbusOutNode[{}] initialized with slave address: {}, port: {}", id, slaveAddress, port);
+        } catch (ModbusInitException e) {
+            log.error("Failed to initialize Modbus master for ModbusOutNode[{}]: ", id, e);
+        }
     }
 
     /**
@@ -78,6 +95,21 @@ public class ModbusNode extends OutNode {
                 }
             } catch (ModbusTransportException e) {
                 log.error("Error processing Modbus request in ModbusOutNode[{}]: ", id, e);
+            }
+        }
+    }
+
+    /**
+     * Modbus 마스터 연결을 종료하고 리소스를 정리합니다.
+     */
+    @Override
+    public void stop() {
+        if (master != null) {
+            try {
+                master.destroy();
+                log.info("ModbusOutNode[{}] Modbus master destroyed", id);
+            } catch (Exception e) {
+                log.error("Error destroying Modbus master for ModbusOutNode[{}]: ", id, e);
             }
         }
     }

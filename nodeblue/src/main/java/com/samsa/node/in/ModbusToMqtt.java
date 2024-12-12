@@ -3,6 +3,10 @@ package com.samsa.node.in;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+
 import com.samsa.core.InOutNode;
 import com.samsa.core.Message;
 import lombok.extern.slf4j.Slf4j;
@@ -10,14 +14,20 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ModbusToMqtt extends InOutNode {
     private final String topic;
+    private final MqttClient mqttClient;
 
     /**
      * @param id
      * @param topic
      */
-    public ModbusToMqtt(String id, String topic) {
+    public ModbusToMqtt(String id, String mqttBroker, String topic) throws MqttException {
         super(id);
         this.topic = topic;
+        this.mqttClient = new MqttClient(mqttBroker, id);
+        MqttConnectOptions options = new MqttConnectOptions();
+        options.setAutomaticReconnect(true);
+        options.setCleanSession(true);
+        mqttClient.connect(options);
     }
 
     /**
@@ -43,6 +53,18 @@ public class ModbusToMqtt extends InOutNode {
             } catch (Exception e) {
                 log.error("Error converting data to MQTT format: ", e);
             }
+        }
+    }
+
+    @Override
+    public void stop() {
+        try {
+            if (mqttClient != null && mqttClient.isConnected()) {
+                mqttClient.disconnect();
+                log.info("ModbusInNode[{}]: Disconnected from MQTT broker", id);
+            }
+        } catch (MqttException e) {
+            log.error("Error disconnecting from MQTT broker: ", e);
         }
     }
 }
