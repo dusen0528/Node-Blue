@@ -1,5 +1,6 @@
 package com.samsa.core;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -27,31 +28,50 @@ public class Message {
         this.metadata = new HashMap<>();
     }
 
-   // 메타데이터 포함 생성자
-   public Message(Object payload, Map<String, Object> metadata) {
-       this.id = UUID.randomUUID().toString();
-       this.payload = payload;
-       this.metadata = new HashMap<>(metadata);  // 메타데이터 복사
-   }
+    // 메타데이터 포함 생성자
+    public Message(Object payload, Map<String, Object> metadata) {
+        this.id = UUID.randomUUID().toString();
+        this.payload = payload;
+        this.metadata = new HashMap<>(metadata); // 메타데이터 복사
+    }
 
-   // 전체 지정 생성자 
-   public Message(String id, Object payload, Map<String, Object> metadata) {
-       this.id = id;
-       this.payload = payload;
-       this.metadata = new HashMap<>(metadata);
-   }
+    // 전체 지정 생성자
+    public Message(String id, Object payload, Map<String, Object> metadata) {
+        this.id = id;
+        this.payload = payload;
+        this.metadata = new HashMap<>(metadata);
+    }
 
+    public String getId() {
+        return id;
+    }
 
-   public String getId() {
-       return id;
-   }
+    public Object getPayload() {
+        return payload;
+    }
 
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
 
-   public Object getPayload() {
-       return payload;
-   }
+    /**
+     * 
+     * payload를 binary 형식으로 변환하는 메소드
+     */
+    public byte[] getPayloadAsBinary() {
+        if (payload == null) {
+            throw new UnsupportedOperationException("payload가 null입니다. 바이너리로 변환할 수 없습니다.");
+        }
 
-   public Map<String, Object> getMetadata() {
-       return metadata;
-   }
+        if (payload instanceof byte[]) {
+            // 이미 바이너리 데이터인 경우 그대로 반환
+            return (byte[]) payload;
+        } else if (payload instanceof String) {
+            // 문자열인 경우 UTF-8 인코딩으로 변환
+            return ((String) payload).getBytes(StandardCharsets.UTF_8);
+        } else {
+            // 그 외의 객체는 toString() 후 변환
+            return payload.toString().getBytes(StandardCharsets.UTF_8);
+        }
+    }
 }

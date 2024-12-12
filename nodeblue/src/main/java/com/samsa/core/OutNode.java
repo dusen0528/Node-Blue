@@ -3,6 +3,7 @@ package com.samsa.core;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 출력을 생성하는 노드의 추상 클래스입니다.
@@ -12,13 +13,16 @@ public abstract class OutNode extends Node {
     /** 출력 파이프들의 리스트 */
     private final List<Pipe> outputPipes = new ArrayList<>();
 
-    /**
-     * OutNode를 생성합니다.
-     *
-     * @param id 노드의 고유 식별자
-     */
-    protected OutNode(String id) {
-        this.id = id;
+    public OutNode() {
+        super();
+    }
+
+    public OutNode(UUID id) {
+        super(id);
+    }
+
+    public OutNode(String uuid) {
+        super(uuid);
     }
 
     /**
@@ -43,7 +47,6 @@ public abstract class OutNode extends Node {
     public final void onMessage(Message message) {
         throw new UnsupportedOperationException("Output node cannot receive messages");
     }
-
 
     public void addPipe(Pipe pipe) {
         outputPipes.add(pipe);
