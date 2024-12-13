@@ -1,4 +1,4 @@
-package com.samsa.node.in;
+package com.samsa.node.inout;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -1,4 +1,4 @@
-package com.samsa.node.out;
+package com.samsa.node.inout;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -17,7 +17,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.samsa.core.Message;
 import com.samsa.core.Pipe;
-import com.samsa.node.in.ModbusToMqtt;
 
 @ExtendWith(MockitoExtension.class)
 public class ModbusToMqttTest {
