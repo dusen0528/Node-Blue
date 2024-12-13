@@ -2,8 +2,6 @@ package com.samsa.node.out;
 
 import java.util.Objects;
 
-import javax.management.RuntimeErrorException;
-
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -15,7 +13,7 @@ import com.samsa.core.OutNode;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class MqttInNode extends OutNode{    
+public class MqttInNode extends OutNode {
     // 브로커한테 받으니까 sub
 
     private String broker;
@@ -26,7 +24,7 @@ public class MqttInNode extends OutNode{
 
     public MqttInNode(String broker, String clientId) {
         super();
-        if(Objects.isNull(broker) || Objects.isNull(clientId)) {
+        if (Objects.isNull(broker) || Objects.isNull(clientId)) {
             throw new NullPointerException();
         }
         this.broker = broker;
@@ -42,7 +40,7 @@ public class MqttInNode extends OutNode{
     @Override
     public void start() {
         super.start();
-            try{
+        try {
             mqttClient = new MqttClient(broker, clientId); // mqtt 클라이언트가 해당 브로커와 연결할 것이라고 알려줘야함.
             System.out.println("mqttClient create");
             mqttClient.connect(); // 지정된 브로커(서버)에 연결을 시도합니다.
@@ -61,7 +59,6 @@ public class MqttInNode extends OutNode{
                     // JsonNode jsonNode = new ObjectMapper().readTree(payload);
                     // System.out.println(jsonNode.toString());
 
-
                     Message msg = new Message(payload);
                     log.info(msg.getPayload().toString());
                     emit(msg);
@@ -73,7 +70,7 @@ public class MqttInNode extends OutNode{
                 }
             });
             mqttClient.subscribe(topics, qos); // Sub이 topics을 구독
-        }catch(Exception e){
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
