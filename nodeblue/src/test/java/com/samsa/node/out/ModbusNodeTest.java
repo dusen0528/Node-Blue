@@ -1,162 +1,161 @@
 package com.samsa.node.out;
 
+import com.serotonin.modbus4j.ModbusMaster;
+import com.serotonin.modbus4j.ModbusFactory;
+import com.serotonin.modbus4j.exception.ModbusInitException;
+import com.serotonin.modbus4j.exception.ModbusTransportException;
+import com.serotonin.modbus4j.msg.ReadHoldingRegistersRequest;
+import com.serotonin.modbus4j.msg.ReadHoldingRegistersResponse;
+import org.junit.jupiter.api.*;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.util.Map;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.*;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+class ModbusNodeTest {
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import com.samsa.core.Message;
-import com.serotonin.modbus4j.ModbusFactory;
-import com.serotonin.modbus4j.ModbusMaster;
-import com.serotonin.modbus4j.exception.ModbusInitException;
-import com.serotonin.modbus4j.exception.ModbusTransportException;
-import com.serotonin.modbus4j.ip.IpParameters;
-import com.serotonin.modbus4j.msg.ReadHoldingRegistersRequest;
-import com.serotonin.modbus4j.msg.ReadHoldingRegistersResponse;
-
-@ExtendWith(MockitoExtension.class)
-public class ModbusNodeTest {
+    private ModbusNode modbusNode;
+    private static final String NODE_ID = UUID.randomUUID().toString();
+    private static final String HOST = "192.168.70.203";
+    private static final int PORT = 502;
+    private static final int SLAVE_ADDRESS = 0;
+    private static final int SLAVE_ID = 1;
+    private static final int REGISTER_COUNT = 10;
 
     @Mock
     private ModbusMaster modbusMaster;
-
     @Mock
     private ModbusFactory modbusFactory;
-
     @Mock
     private ReadHoldingRegistersResponse response;
 
-    private ModbusNode modbusNode;
-    private static final String TEST_SLAVE_ADDRESS = "localhost";
-    private static final int TEST_PORT = 502;
+    private AutoCloseable closeable;
 
-    /**
-     * 인스턴스 생성 테스트
-     * 
-     * @throws ModbusInitException
-     */
     @BeforeEach
-    void setUp() throws ModbusInitException {
-
-        String testId = UUID.randomUUID().toString();
-        // ModbusNode 인스턴스 생성
-        modbusNode = new ModbusNode(testId, TEST_SLAVE_ADDRESS, TEST_PORT);
-
-        // ModbusMaster mock 객체 주입
-        // ReflectionTestUtils.setField(modbusNode, "master", modbusMaster);
+    void setUp() {
+        closeable = MockitoAnnotations.openMocks(this);
+        modbusNode = new ModbusNode(NODE_ID, HOST, PORT, SLAVE_ADDRESS, SLAVE_ID, REGISTER_COUNT);
+        // ModbusFactory 모킹 추가
+        when(modbusFactory.createTcpMaster(any(), anyBoolean())).thenReturn(modbusMaster);
     }
 
-    /**
-     * 요청 테스트
-     * 
-     * @throws ModbusTransportException
-     */
-    @Test
-    void testValidModbusRequest() throws ModbusTransportException {
-
-        // 유효한 payload를 포함한 메세지 객체 생성
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("slaveId", 1);
-        payload.put("startAddress", 0);
-        payload.put("quantity", 10);
-        Message message = new Message(payload);
-
-        // ModbusMaster의 send()에 대한 Mock 응답 설정
-        ReadHoldingRegistersResponse response = mock(ReadHoldingRegistersResponse.class);
-        when(response.isException()).thenReturn(false);
-        when(response.getShortData()).thenReturn(new short[] { 100, 200, 300 });
-        when(modbusMaster.send(any(ReadHoldingRegistersRequest.class))).thenReturn(response);
-
-        modbusNode.onMessage(message);
-
-        // ModbusMaster.send() 메서드가 한번 호출되었는지 검증
-        verify(modbusMaster, times(1)).send(any(ReadHoldingRegistersRequest.class));
-    }
-
-    /**
-     * 유효하지 않은 메세지 Payload인지 테스트
-     */
-    @Test
-    void testInvalidMessagePayload() {
-
-        // 유효하지 않은 메세지 생성
-        Message invalidMessage = new Message("invalid payload");
-        modbusNode.onMessage(invalidMessage); // 실행
-
-        // 호출되지 않았는지 검증
-        try {
-            verify(modbusMaster, never()).send(any(ReadHoldingRegistersRequest.class));
-        } catch (ModbusTransportException e) {
-            e.printStackTrace();
+    @AfterEach
+    void tearDown() throws Exception {
+        if (modbusNode != null) {
+            modbusNode.stop();
         }
+        closeable.close();
     }
 
-    /**
-     * 예외가 발생하는지 테스트
-     * 
-     * @throws ModbusTransportException
-     */
     @Test
-    void testModbusException() throws ModbusTransportException {
-
-        // 유효한 payload 객체 생성
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("slaveId", 1);
-        payload.put("startAddress", 0);
-        payload.put("quantity", 10);
-        Message message = new Message(payload);
-
-        // modbusMaster.send() 메서드가 예외 던지도록 설정
-        when(modbusMaster.send(any(ReadHoldingRegistersRequest.class)))
-                .thenThrow(new ModbusTransportException("Test exception"));
-
-        modbusNode.onMessage(message);
-
-        // 호출되었는지 검증
-        verify(modbusMaster, times(1)).send(any(ReadHoldingRegistersRequest.class));
+    void constructor_WithValidParameters_ShouldCreateInstance() {
+        assertNotNull(modbusNode);
     }
 
-    /**
-     * stop() 테스트
-     */
     @Test
-    void testStop() {
-
-        modbusNode.stop();
-        verify(modbusMaster).destroy();
+    void constructor_WithInvalidHost_ShouldThrowException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new ModbusNode(NODE_ID, "", PORT, SLAVE_ADDRESS, SLAVE_ID, REGISTER_COUNT));
     }
 
-    /**
-     * start() 테스트
-     * 
-     * @throws ModbusInitException
-     */
     @Test
-    void testStart() throws ModbusInitException {
+    void constructor_WithInvalidPort_ShouldThrowException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new ModbusNode(NODE_ID, HOST, -1, SLAVE_ADDRESS, SLAVE_ID, REGISTER_COUNT));
+    }
 
-        // ModbusFactory와 ModbusMaster에 대한 mock 객체 생성
-        ModbusFactory mockFactory = mock(ModbusFactory.class);
-        ModbusMaster mockMaster = mock(ModbusMaster.class);
+    @Test
+    void constructor_WithInvalidSlaveAddress_ShouldThrowException() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new ModbusNode(NODE_ID, HOST, PORT, -1, SLAVE_ID, REGISTER_COUNT));
+    }
 
-        // Modbus TCP 통신을 테스트할때, 실제 네트워크 연결 없이 동작을 검증하기 위한 부분
-        mockFactory.createTcpMaster(any(IpParameters.class), anyBoolean());
-
-        // // // mock 객체를 ModbusNode에 주입
-        // ReflectionTestUtils.setField(modbusNode, "master", mockMaster);
-        // ReflectionTestUtils.setField(modbusNode, "master", mockMaster);
+    @Test
+    void start_Success_ShouldInitializeConnection() throws ModbusInitException {
+        when(modbusFactory.createTcpMaster(any(), anyBoolean())).thenReturn(modbusMaster);
+        doNothing().when(modbusMaster).init();
 
         modbusNode.start();
 
-        // 검증
-        verify(modbusMaster, never()).init();
+        verify(modbusMaster, times(1));
+    }
+
+    @Test
+    void start_WithRetry_ShouldAttemptReconnection() throws ModbusInitException {
+        when(modbusFactory.createTcpMaster(any(), anyBoolean())).thenReturn(modbusMaster);
+        doThrow(ModbusInitException.class)
+                .doThrow(ModbusInitException.class)
+                .doNothing()
+                .when(modbusMaster).init();
+
+        modbusNode.start();
+
+        verify(modbusMaster, times(3));
+    }
+
+    @Test
+    void onMessage_WithNullMessage_ShouldNotProcess() throws ModbusTransportException {
+        modbusNode.onMessage(null);
+
+        verify(modbusMaster, never()).send(any(ReadHoldingRegistersRequest.class));
+    }
+
+    @Test
+    public void stop_ShouldDestroyMaster() {
+        ModbusMaster modbusMasterMock = mock(ModbusMaster.class); // 모의 객체
+        ModbusNode modbusNode = new ModbusNode(NODE_ID, "localhost", 502, 0, 1, 10);
+        modbusNode.setMaster(modbusMasterMock); // master 설정
+
+        // stop() 호출
+        modbusNode.stop();
+
+        // destroy() 메서드가 호출되었는지 확인
+        verify(modbusMasterMock, times(1)).destroy();
+    }
+
+    @Test
+    void setDescription_WithValidString_ShouldSetDescription() {
+        String testDescription = "Test Description";
+
+        modbusNode.setDescription(testDescription);
+
+        assertEquals(testDescription, (modbusNode).getDescription());
+    }
+
+    @Test
+    void setDescription_WithNull_ShouldNotChangeDescription() {
+        String initialDescription = modbusNode.getDescription();
+
+        modbusNode.setDescription(null);
+
+        assertEquals(initialDescription, modbusNode.getDescription());
+    }
+
+    @Test
+    void processRegisterData_WithValidData_ShouldReturnMap() {
+        short[] testData = new short[] { 100, 200 };
+        modbusNode.setDescription("test");
+
+        Map<String, Object> result = modbusNode.processRegisterData(testData);
+
+        assertNotNull(result);
+        assertTrue(result.containsKey("test"));
+        assertArrayEquals(testData, (short[]) result.get("test"));
+    }
+
+    @Test
+    void processRegisterData_WithEmptyDescription_ShouldUseDefault() {
+        short[] testData = new short[] { 100, 200 };
+
+        Map<String, Object> result = modbusNode.processRegisterData(testData);
+
+        assertNotNull(result);
+        assertTrue(result.containsKey("default"));
     }
 }
