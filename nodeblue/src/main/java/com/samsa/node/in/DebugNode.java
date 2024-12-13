@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DebugNode extends InNode {
 
-
     /**
      * 새로운 DebugNode를 생성합니다.
      *

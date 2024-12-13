@@ -32,7 +32,7 @@ public abstract class Node {
         } catch (IllegalArgumentException e) {
         
         throw e;
-    }
+        }
     }
 
     /**
