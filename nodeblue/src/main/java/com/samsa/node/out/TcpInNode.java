@@ -19,14 +19,10 @@ public class TcpInNode extends OutNode {
     private String host;
     /** TCP 서버의 포트 번호 */
     private int port;
-    /** connect 종류 ("대기" 또는 "connect") */
-    private String connectionType;
-    /** 출력 형식 ("stream" 또는 "바이너리 버퍼") */
+    /** 출력 형식 ("stream" 또는 "binary buffer") */
     private String outputFormat;
     /** 메시지의 토픽 */
     private String topic;
-    /** 사용자 정의 이름 */
-    private String name;
     /** TCP 소켓 인스턴스 */
     private Socket socket;
     /** TCP 데이터를 전송하는 출력 stream */
@@ -34,7 +30,7 @@ public class TcpInNode extends OutNode {
 
     /**
      * {@code TcpInNode}의 생성자.
-     * 
+     *
      * @param id   노드의 고유 식별자
      * @param host connect할 TCP 서버의 호스트 주소 (예: 127.0.0.1)
      * @param port connect할 TCP 서버의 포트 번호 (예: 8080)
@@ -43,7 +39,6 @@ public class TcpInNode extends OutNode {
         super(id); // OutNode의 기본 생성자 호출
         this.host = host;
         this.port = port;
-
     }
 
     /**
@@ -56,10 +51,12 @@ public class TcpInNode extends OutNode {
     public void start() {
         super.start();
         try {
-            // 소켓이 연결된 후 출력 스트림을 얻습니다.
+            // 소켓 초기화 및 서버 연결
+            socket = new Socket(host, port);
             outputStream = socket.getOutputStream();
             log.info("TcpInNode[{}] 연결됨 - {}:{}", getId(), host, port);
         } catch (IOException e) {
+            log.error("TcpInNode[{}] 연결 실패 - {}:{} - {}", getId(), host, port, e.getMessage());
             handleError(e);
         }
     }
@@ -80,15 +77,16 @@ public class TcpInNode extends OutNode {
             if (socket != null) {
                 socket.close();
             }
-            log.info("TcpInNode[{}] connect 종료됨", getId());
+            log.info("TcpInNode[{}] 연결 종료됨", getId());
         } catch (IOException e) {
+            log.error("TcpInNode[{}] 연결 종료 중 오류: {}", getId(), e.getMessage());
             handleError(e);
         }
     }
 
     /**
      * 메시지를 TCP connect을 통해 전송합니다.
-     * 
+     *
      * @param message 전송할 메시지 객체
      */
     @Override
@@ -100,7 +98,7 @@ public class TcpInNode extends OutNode {
         }
         try {
             byte[] messageBytes;
-            if ("binary buffer".equals(outputFormat)) {
+            if ("binary buffer".equalsIgnoreCase(outputFormat)) {
                 // 바이너리 형식으로 메시지를 변환
                 messageBytes = message.getPayloadAsBinary();
             } else {
@@ -113,9 +111,10 @@ public class TcpInNode extends OutNode {
                 outputStream.flush();
                 log.info("TcpInNode[{}] 메시지 전송: {}", getId(), new String(messageBytes));
             } else {
-                throw new IndexOutOfBoundsException("메시지는 최소 1바이트 이상이어야 합니다.");
+                log.warn("TcpInNode[{}] 메시지가 비어 있음", getId());
             }
         } catch (IOException e) {
+            log.error("TcpInNode[{}] 메시지 전송 실패: {}", getId(), e.getMessage());
             handleError(e);
         }
     }
@@ -138,14 +137,6 @@ public class TcpInNode extends OutNode {
         this.port = port;
     }
 
-    public String getConnectionType() {
-        return connectionType;
-    }
-
-    public void setConnectionType(String connectionType) {
-        this.connectionType = connectionType;
-    }
-
     public String getOutputFormat() {
         return outputFormat;
     }
@@ -162,3 +153,39 @@ public class TcpInNode extends OutNode {
         this.topic = topic;
     }
 }
+
+/**
+ * //사용예제
+ * 
+ * // TcpInNode 설정
+ * String nodeId = "node1";
+ * String host = "127.0.0.1"; // 로컬 서버
+ * int port = 8080;
+ * 
+ * // TcpInNode 객체 생성
+ * TcpInNode tcpNode = new TcpInNode(nodeId, host, port);
+ * 
+ * // 출력 포맷 설정
+ * tcpNode.setOutputFormat("stream");
+ * 
+ * try {
+ * // 노드 시작 (TCP 서버와 연결)
+ * tcpNode.start();
+ * 
+ * // 메시지 생성 및 전송
+ * Message message = new Message("Hello, TCP Server!");
+ * tcpNode.emit(message);
+ * 
+ * // 메시지 2
+ * Message anotherMessage = new Message("Second message from client.");
+ * tcpNode.emit(anotherMessage);
+ * 
+ * } catch (Exception e) {
+ * e.printStackTrace();
+ * } finally {
+ * // 노드 종료
+ * tcpNode.stop();
+ * }
+ * }
+ * }
+ */
