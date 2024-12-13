@@ -1,5 +1,7 @@
 package com.samsa.node.out;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 import java.util.Map;
@@ -27,7 +29,7 @@ public class ModbusToMqttTest {
     private Pipe outputPipe;
 
     private ModbusToMqtt modbusToMqtt;
-    private static final String TEST_ID = "test_node";
+    private static final String TEST_ID = "123e4567-e89b-12d3-a456-426614174000";
     private static final String TEST_TOPIC = "test/topic";
     private static final String TEST_BROKER = "tcp://localhost:1883";
 

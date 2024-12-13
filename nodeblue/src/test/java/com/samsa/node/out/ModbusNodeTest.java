@@ -22,7 +22,6 @@ import com.serotonin.modbus4j.exception.ModbusTransportException;
 import com.serotonin.modbus4j.ip.IpParameters;
 import com.serotonin.modbus4j.msg.ReadHoldingRegistersRequest;
 import com.serotonin.modbus4j.msg.ReadHoldingRegistersResponse;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 public class ModbusNodeTest {
@@ -53,7 +52,7 @@ public class ModbusNodeTest {
         modbusNode = new ModbusNode(testId, TEST_SLAVE_ADDRESS, TEST_PORT);
 
         // ModbusMaster mock 객체 주입
-        ReflectionTestUtils.setField(modbusNode, "master", modbusMaster);
+        // ReflectionTestUtils.setField(modbusNode, "master", modbusMaster);
     }
 
     /**
@@ -151,9 +150,9 @@ public class ModbusNodeTest {
         // Modbus TCP 통신을 테스트할때, 실제 네트워크 연결 없이 동작을 검증하기 위한 부분
         mockFactory.createTcpMaster(any(IpParameters.class), anyBoolean());
 
-        // // mock 객체를 ModbusNode에 주입
-        ReflectionTestUtils.setField(modbusNode, "master", mockMaster);
-        ReflectionTestUtils.setField(modbusNode, "master", mockMaster);
+        // // // mock 객체를 ModbusNode에 주입
+        // ReflectionTestUtils.setField(modbusNode, "master", mockMaster);
+        // ReflectionTestUtils.setField(modbusNode, "master", mockMaster);
 
         modbusNode.start();
 
