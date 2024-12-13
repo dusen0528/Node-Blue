@@ -74,13 +74,6 @@
             <version>1.18.30</version>
             <scope>provided</scope>
         </dependency>
-        <
-        <
-        <
-        <
-        <
-        <
-        < HEAD
         <!-- Jackson Databind for object mapping -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -110,8 +103,6 @@
             <artifactId>jackson-dataformat-yaml</artifactId>
             <version>2.15.2</version> <!-- 최신 버전으로 수정 가능 -->
         </dependency>
-        =======
-        >>>>>>> 6e5d9a8263fe49b02f3d90e261aba77eb95036df
         <!-- Logback (SLF4J Implementation) -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -124,33 +115,16 @@
             <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
             <version>1.2.5</version>
         </dependency>
-        <
-        <
-        <
-        <
-        <
-        <
-        < HEAD
-=======
+
         <!--TEST
         Code-->
-        >>>>>>> 6e5d9a8263fe49b02f3d90e261aba77eb95036df
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
             <version>5.8.2</version>
             <scope>test</scope>
         </dependency>
-        <
-        <
-        <
-        <
-        <
-        <
-        < HEAD
 
-=======
->>>>>>> 6e5d9a8263fe49b02f3d90e261aba77eb95036df
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
