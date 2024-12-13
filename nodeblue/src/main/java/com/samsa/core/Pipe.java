@@ -1,83 +1,88 @@
 package com.samsa.core;
 
-/**
- * 노드 간의 연결을 담당하는 파이프 클래스입니다.
- * 메시지를 한 노드에서 다른 노드로 전달하는 역할을 합니다.
- */
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+
 public class Pipe {
-    /** 파이프의 고유 식별자 */
-    private final String id;
-
-    /** 이 파이프가 연결된 소스 노드 */
-    private final Node node;
-
-    /** 이 파이프와 연결된 대상 파이프 */
-    private Pipe connectedPipe;
+    private final UUID id;
+    private final BlockingQueue<Message> queue;
+    private static final int DEFAULT_CAPACITY = 1024;
 
     /**
-     * 새로운 파이프를 생성합니다.
-     *
-     * @param id   파이프의 고유 식별자
-     * @param node 이 파이프가 연결될 소스 노드
+     * 기본 용량의 파이프를 생성합니다.
      */
-    public Pipe(String id, Node node) {
-        this.id = id;
-        this.node = node;
+    public Pipe() {
+        this(DEFAULT_CAPACITY);
+    }
+
+    /**
+     * 지정된 용량의 파이프를 생성합니다.
+     */
+    public Pipe(int capacity) {
+        this.id = UUID.randomUUID();
+        this.queue = new ArrayBlockingQueue<>(capacity);
+    }
+
+    /**
+     * 메시지를 파이프에 넣습니다. 큐가 가득 찬 경우 false를 반환합니다.
+     */
+    public boolean offer(Message message) {
+        if (Objects.isNull(message)) {
+            throw new IllegalArgumentException("Message cannot be null");
+        }
+        return queue.offer(message);
+    }
+
+    /**
+     * 파이프에서 메시지를 가져옵니다. 큐가 비어있는 경우 null을 반환합니다.
+     */
+    public Message poll() {
+        return queue.poll();
+    }
+
+    /**
+     * 파이프가 비어있는지 확인합니다.
+     */
+    public boolean isEmpty() {
+        return queue.isEmpty();
+    }
+
+    /**
+     * 파이프가 가득 찼는지 확인합니다.
+     */
+    public boolean isFull() {
+        return queue.remainingCapacity() == 0;
+    }
+
+    /**
+     * 현재 파이프에 있는 메시지 수를 반환합니다.
+     */
+    public int size() {
+        return queue.size();
     }
 
     /**
      * 파이프의 고유 식별자를 반환합니다.
-     *
-     * @return 파이프 ID
      */
-    public String getId() {
+    public UUID getId() {
         return id;
     }
 
     /**
-     * 이 파이프가 연결된 소스 노드를 반환합니다.
-     *
-     * @return 소스 노드
+     * 파이프를 비웁니다.
      */
-    public Node getNode() {
-        return node;
+    public void clear() {
+        queue.clear();
     }
 
     /**
-     * 이 파이프를 다른 파이프와 연결합니다.
-     *
-     * @param pipe 연결할 대상 파이프
+     * 현재 파이프의 상태 정보를 문자열로 반환합니다.
      */
-    public void connect(Pipe pipe) {
-        this.connectedPipe = pipe;
-    }
-
-    /**
-     * 현재 연결된 파이프와의 연결을 해제합니다.
-     */
-    public void disconnect() {
-        this.connectedPipe = null;
-    }
-
-    /**
-     * 파이프가 다른 파이프와 연결되어 있는지 확인합니다.
-     *
-     * @return 연결되어 있으면 true, 아니면 false
-     */
-    public boolean isConnected() {
-        return connectedPipe != null;
-    }
-
-    /**
-     * 메시지를 연결된 파이프를 통해 다음 노드로 전송합니다.
-     * 파이프가 연결되어 있지 않으면 메시지는 전송되지 않습니다.
-     *
-     * @param message 전송할 메시지
-     */
-
-    public void send(Message message) {
-        if (isConnected()) {
-            connectedPipe.getNode().onMessage(message);
-        }
+    @Override
+    public String toString() {
+        return String.format("Pipe[id=%s, size=%d, capacity=%d]",
+                id, queue.size(), queue.size() + queue.remainingCapacity());
     }
 }
