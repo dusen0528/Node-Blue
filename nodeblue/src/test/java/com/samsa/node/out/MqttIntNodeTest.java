@@ -1,7 +1,8 @@
 package com.samsa.node.out;
 
-import org.junit.jupiter.api.*;
-
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 class MqttIntNodeTest {
 
@@ -9,22 +10,22 @@ class MqttIntNodeTest {
 
     @BeforeEach
     void setUp() {
-        String [] topics = {"application/#","123"};
+        String[] topics = { "application/#", "123" };
         mqttInNode = new MqttInNode("tcp://192.168.70.203:1883", "123", topics);
     }
 
     @Test
     void constructorTest() {
         Assertions.assertThrows(NullPointerException.class,
-        () -> new MqttInNode(null, "123"));
+                () -> new MqttInNode(null, "123"));
 
         Assertions.assertThrows(NullPointerException.class,
-        () -> new MqttInNode("123", null));
+                () -> new MqttInNode("123", null));
     }
 
     @Test
     void start() {
-        
+
         mqttInNode.start();
         try {
             Thread.sleep(100000);
@@ -32,6 +33,6 @@ class MqttIntNodeTest {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        Assertions.assertDoesNotThrow(()-> mqttInNode.start());
+        Assertions.assertDoesNotThrow(() -> mqttInNode.start());
     }
 }

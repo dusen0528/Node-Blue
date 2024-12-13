@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.samsa</groupId>
@@ -13,7 +13,7 @@
         <maven.compiler.target>17</maven.compiler.target>
     </properties>
 
-         <repositories>
+    <repositories>
         <repository>
             <releases>
                 <enabled>true</enabled>
@@ -27,16 +27,16 @@
             <url>https://maven.mangoautomation.net/repository/ias-release/</url>
         </repository>
     </repositories>
-    
-    
+
+
     <dependencies>
-    <!-- https://mvnrepository.com/artifact/com.infiniteautomation/modbus4j -->
+        <!-- https://mvnrepository.com/artifact/com.infiniteautomation/modbus4j -->
         <dependency>
             <groupId>com.infiniteautomation</groupId>
             <artifactId>modbus4j</artifactId>
             <version>3.1.0</version>
         </dependency>
-    <!-- Jackson Databind for object mapping -->
+        <!-- Jackson Databind for object mapping -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -86,7 +86,8 @@
             <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
             <version>1.2.5</version>
         </dependency>
-        <!--TEST Code-->
+        <!--TEST
+        Code-->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>

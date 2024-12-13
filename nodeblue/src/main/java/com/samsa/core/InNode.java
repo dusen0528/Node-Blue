@@ -16,11 +16,11 @@ public abstract class InNode extends Node {
     public InNode() {
         super();
     }
-    
+
     public InNode(UUID id) {
         super(id);
     }
-    
+
     public InNode(String uuid) {
         super(uuid);
     }

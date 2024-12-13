@@ -12,26 +12,24 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class Node {
     /** 노드의 고유 식별자 */
     protected UUID id;
-    
+
     /** 노드의 현재 상태 */
     protected NodeStatus status = NodeStatus.CREATED;
-    
 
     public Node() {
         this.id = UUID.randomUUID();
     }
-    
 
     public Node(UUID id) {
         this.id = id;
     }
-    
+
     public Node(String uuid) {
-        try{
+        try {
             this.id = UUID.fromString(uuid);
         } catch (IllegalArgumentException e) {
-        
-        throw e;
+
+            throw e;
         }
     }
 
@@ -42,7 +40,7 @@ public abstract class Node {
      * @param message 처리할 메시지 객체
      */
     public abstract void onMessage(Message message);
-    
+
     /**
      * 노드를 시작하고 상태를 RUNNING으로 변경합니다.
      */
@@ -70,14 +68,13 @@ public abstract class Node {
         log.error("Error in Node[{}]: ", id, error);
     }
 
-    
     public UUID getId() {
         return id;
     }
 
     public void setId(String id) {
         this.id = UUID.fromString(id);
-    }   
+    }
 }
 
 /**

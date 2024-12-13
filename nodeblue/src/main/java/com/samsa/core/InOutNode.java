@@ -14,17 +14,15 @@ public abstract class InOutNode extends Node {
     private final List<Pipe> inputPipes = new ArrayList<>();
     /** 출력 파이프들의 리스트 */
     private final List<Pipe> outputPipes = new ArrayList<>();
-    
 
     public InOutNode() {
         super();
     }
-    
 
     public InOutNode(UUID id) {
         super(id);
     }
-    
+
     public InOutNode(String uuid) {
         super(uuid);
     }
@@ -65,6 +63,5 @@ public abstract class InOutNode extends Node {
     protected List<Pipe> getOutputPipes() {
         return Collections.unmodifiableList(outputPipes);
     }
-
 
 }
