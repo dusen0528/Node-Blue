@@ -29,8 +29,8 @@ public class DebugNode extends InNode {
      */
     @Override
     public void onMessage(Message message) {
-            String payload = message.getPayload().toString();
-            log.info("Node[{}] - Payload: {}", getId(), payload);
+        String payload = message.getPayload().toString();
+        log.info("Node[{}] - Payload: {}", getId(), payload);
     }
 
     /**

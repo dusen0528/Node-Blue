@@ -1,0 +1,4 @@
+{
+    "java.debug.settings.onBuildFailureProceed": true,
+    "java.testClass": "com.samsa.node.out.TcpOutNodeTest.java"
+}
