@@ -1,161 +1,130 @@
 package com.samsa.node.out;
 
+import com.samsa.core.OutPort;
 import com.serotonin.modbus4j.ModbusMaster;
-import com.serotonin.modbus4j.ModbusFactory;
-import com.serotonin.modbus4j.exception.ModbusInitException;
-import com.serotonin.modbus4j.exception.ModbusTransportException;
-import com.serotonin.modbus4j.msg.ReadHoldingRegistersRequest;
-import com.serotonin.modbus4j.msg.ReadHoldingRegistersResponse;
-import org.junit.jupiter.api.*;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-
-import java.util.Map;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.*;
 
+/**
+ * ModbusNode 클래스에 대한 단위 테스트입니다. 이 클래스는 Modbus 프로토콜을 사용하여 외부 장치와 통신합니다.
+ */
 class ModbusNodeTest {
 
     private ModbusNode modbusNode;
-    private static final String NODE_ID = UUID.randomUUID().toString();
-    private static final String HOST = "192.168.70.203";
-    private static final int PORT = 502;
-    private static final int SLAVE_ADDRESS = 0;
-    private static final int SLAVE_ID = 1;
-    private static final int REGISTER_COUNT = 10;
+    private OutPort mockOutPort;
+    private ModbusMaster mockMaster;
+    private UUID nodeId;
 
-    @Mock
-    private ModbusMaster modbusMaster;
-    @Mock
-    private ModbusFactory modbusFactory;
-    @Mock
-    private ReadHoldingRegistersResponse response;
-
-    private AutoCloseable closeable;
-
+    /**
+     * 테스트 환경을 설정합니다. 모의 객체와 ModbusNode 인스턴스를 초기화합니다.
+     */
     @BeforeEach
     void setUp() {
-        closeable = MockitoAnnotations.openMocks(this);
-        modbusNode = new ModbusNode(NODE_ID, HOST, PORT, SLAVE_ADDRESS, SLAVE_ID, REGISTER_COUNT);
-        // ModbusFactory 모킹 추가
-        when(modbusFactory.createTcpMaster(any(), anyBoolean())).thenReturn(modbusMaster);
+        nodeId = UUID.randomUUID();
+        mockOutPort = mock(OutPort.class);
+
+        modbusNode = new ModbusNode(nodeId, "localhost", mockOutPort, 0, 1, 5);
+        modbusNode.master = mockMaster;
     }
 
-    @AfterEach
-    void tearDown() throws Exception {
-        if (modbusNode != null) {
-            modbusNode.stop();
-        }
-        closeable.close();
-    }
-
+    /**
+     * ModbusNode의 OutPort가 null일 때 IllegalArgumentException이 발생하는지 테스트합니다.
+     */
     @Test
-    void constructor_WithValidParameters_ShouldCreateInstance() {
-        assertNotNull(modbusNode);
+    void testOutPortNull() {
+        // Expect IllegalArgumentException to be thrown when OutPort is null
+        assertThrows(IllegalArgumentException.class, () -> {
+            new ModbusNode(UUID.randomUUID(), "localhost", null, 0, 1, 5); // Pass null for OutPort
+        }, "OutPort cannot be null");
     }
 
+    /**
+     * host가 null 또는 빈 값일 때 IllegalArgumentException이 발생하는지 확인하는 테스트입니다.
+     */
     @Test
-    void constructor_WithInvalidHost_ShouldThrowException() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new ModbusNode(NODE_ID, "", PORT, SLAVE_ADDRESS, SLAVE_ID, REGISTER_COUNT));
+    void testHostNullOrEmpty() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new ModbusNode(UUID.randomUUID(), null, mockOutPort, 0, 1, 5);
+        }, "Host cannot be null or empty");
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            new ModbusNode(UUID.randomUUID(), "", mockOutPort, 0, 1, 5);
+        }, "Host cannot be null or empty");
     }
 
+    /**
+     * slaveAddress가 0보다 작은 값일 때 IllegalArgumentException이 발생하는지 확인하는 테스트입니다.
+     */
     @Test
-    void constructor_WithInvalidPort_ShouldThrowException() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new ModbusNode(NODE_ID, HOST, -1, SLAVE_ADDRESS, SLAVE_ID, REGISTER_COUNT));
+    void testInvalidSlaveAddress() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new ModbusNode(UUID.randomUUID(), "localhost", mockOutPort, -1, 1, 5);
+        }, "Invalid slave address");
     }
 
+    /**
+     * slaveId가 0보다 작은 값일 때 IllegalArgumentException이 발생하는지 확인하는 테스트입니다.
+     */
     @Test
-    void constructor_WithInvalidSlaveAddress_ShouldThrowException() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new ModbusNode(NODE_ID, HOST, PORT, -1, SLAVE_ID, REGISTER_COUNT));
+    void testInvalidSlaveId() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new ModbusNode(UUID.randomUUID(), "localhost", mockOutPort, 0, -1, 5);
+        }, "Invalid slave ID");
     }
 
+    /**
+     * registerCount가 0이거나 음수일 때 IllegalArgumentException이 발생하는지 확인하는 테스트입니다.
+     */
     @Test
-    void start_Success_ShouldInitializeConnection() throws ModbusInitException {
-        when(modbusFactory.createTcpMaster(any(), anyBoolean())).thenReturn(modbusMaster);
-        doNothing().when(modbusMaster).init();
+    void testInvalidRegisterCount() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            new ModbusNode(UUID.randomUUID(), "localhost", mockOutPort, 0, 1, 0);
+        }, "Register count must be positive");
 
-        modbusNode.start();
-
-        verify(modbusMaster, times(1));
+        assertThrows(IllegalArgumentException.class, () -> {
+            new ModbusNode(UUID.randomUUID(), "localhost", mockOutPort, 0, 1, -1);
+        }, "Register count must be positive");
     }
 
+    /**
+     * master가 null일 때 NullPointerException이 발생하는지 확인하는 테스트입니다.
+     */
     @Test
-    void start_WithRetry_ShouldAttemptReconnection() throws ModbusInitException {
-        when(modbusFactory.createTcpMaster(any(), anyBoolean())).thenReturn(modbusMaster);
-        doThrow(ModbusInitException.class)
-                .doThrow(ModbusInitException.class)
-                .doNothing()
-                .when(modbusMaster).init();
+    void testMasterNull() {
+        // 명시적으로 master를 null로 설정하여 NullPointerException이 발생하도록 합니다.
+        modbusNode.master = null;
 
-        modbusNode.start();
-
-        verify(modbusMaster, times(3));
+        assertThrows(NullPointerException.class, () -> {
+            modbusNode.readSensorData();
+        }, "ModbusMaster가 null입니다.");
     }
 
+    /**
+     * ModbusNode의 설명 설정 및 가져오기를 테스트합니다.
+     */
     @Test
-    void onMessage_WithNullMessage_ShouldNotProcess() throws ModbusTransportException {
-        modbusNode.onMessage(null);
-
-        verify(modbusMaster, never()).send(any(ReadHoldingRegistersRequest.class));
-    }
-
-    @Test
-    public void stop_ShouldDestroyMaster() {
-        ModbusMaster modbusMasterMock = mock(ModbusMaster.class); // 모의 객체
-        ModbusNode modbusNode = new ModbusNode(NODE_ID, "localhost", 502, 0, 1, 10);
-        modbusNode.setMaster(modbusMasterMock); // master 설정
-
-        // stop() 호출
-        modbusNode.stop();
-
-        // destroy() 메서드가 호출되었는지 확인
-        verify(modbusMasterMock, times(1)).destroy();
-    }
-
-    @Test
-    void setDescription_WithValidString_ShouldSetDescription() {
-        String testDescription = "Test Description";
-
-        modbusNode.setDescription(testDescription);
-
-        assertEquals(testDescription, (modbusNode).getDescription());
-    }
-
-    @Test
-    void setDescription_WithNull_ShouldNotChangeDescription() {
-        String initialDescription = modbusNode.getDescription();
+    void testSetDescription() {
+        modbusNode.setDescription("Test Description");
+        assertEquals("Test Description", modbusNode.getDescription(), "설명은 올바르게 설정되어야 합니다.");
 
         modbusNode.setDescription(null);
-
-        assertEquals(initialDescription, modbusNode.getDescription());
+        assertEquals("Test Description", modbusNode.getDescription(), "설명을 null로 설정해도 기존 값이 유지되어야 합니다.");
     }
 
+    /**
+     * ModbusNode가 중지 후 리소스를 해제하는지 테스트합니다.
+     */
     @Test
-    void processRegisterData_WithValidData_ShouldReturnMap() {
-        short[] testData = new short[] { 100, 200 };
-        modbusNode.setDescription("test");
+    void testStop() {
+        modbusNode.isConnected.set(false);
 
-        Map<String, Object> result = modbusNode.processRegisterData(testData);
+        modbusNode.stop();
 
-        assertNotNull(result);
-        assertTrue(result.containsKey("test"));
-        assertArrayEquals(testData, (short[]) result.get("test"));
-    }
-
-    @Test
-    void processRegisterData_WithEmptyDescription_ShouldUseDefault() {
-        short[] testData = new short[] { 100, 200 };
-
-        Map<String, Object> result = modbusNode.processRegisterData(testData);
-
-        assertNotNull(result);
-        assertTrue(result.containsKey("default"));
+        assertFalse(modbusNode.isConnected.get(), "ModbusNode는 중지 후 연결되지 않은 상태여야 합니다.");
+        verify(mockMaster, times(1)).destroy();
     }
 }
