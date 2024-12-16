@@ -27,10 +27,10 @@ import lombok.extern.slf4j.Slf4j;
  * 주요 기능:
  * 
  * 
- * <li>**TCP 서버 소켓 관리**: 클라이언트의 연결을 수락하고 데이터를 수신합니다.</li>
- * <li>**스레드 기반 연결 처리**: 클라이언트의 각 연결을 별도의 스레드로 관리합니다.</li>
- * <li>**리소스 관리**: 서버 소켓과 클라이언트 소켓을 안전하게 닫고 스레드 풀을 종료합니다.</li>
- * <li>**동시성 제어**: {@code volatile} 변수와 {@link ExecutorService}를 사용하여 다중 스레드 환경을
+ * <li>TCP 서버 소켓 관리: 클라이언트의 연결을 수락하고 데이터를 수신합니다.</li>
+ * <li>스레드 기반 연결 처리: 클라이언트의 각 연결을 별도의 스레드로 관리합니다.</li>
+ * <li>리소스 관리: 서버 소켓과 클라이언트 소켓을 안전하게 닫고 스레드 풀을 종료합니다.</li>
+ * <li>동시성 제어: {@code volatile} 변수와 {@link ExecutorService}를 사용하여 다중 스레드 환경을
  * 관리합니다.</li>
  * </ul>
  * 
@@ -59,7 +59,7 @@ public class TcpInNode extends OutNode {
      *                상단 참고
      */
     public TcpInNode(int port, OutPort outPort) {
-        super(outPort);
+        super(outPort); // 순환참조?
         this.port = port;
         this.executorService = Executors.newCachedThreadPool();
     }
@@ -72,7 +72,7 @@ public class TcpInNode extends OutNode {
      * @param outPort 메시지를 전달할 출력 포트 ({@link OutPort} 인스턴스)
      */
     public TcpInNode(UUID id, int port, OutPort outPort) {
-        super(id, outPort);
+        super(id, outPort);// 순환참조?
         this.port = port;
         this.executorService = Executors.newCachedThreadPool();
     }
@@ -85,7 +85,11 @@ public class TcpInNode extends OutNode {
      * 별도의 스레드를 시작합니다. 부모 클래스의 {@code start()} 메서드도 호출됩니다.
      * </p>
      * 
-     * @see ServerSocket
+     * @param ServerSocket
+     *                     {@code isRunning} - {@link notion 에 2번 참조
+     *                     https://url.kr/a6n85t}
+     * @see executorService.submit(this::acceptConnections)
+     *      //서버 소켓의 연결을 수락하는 메서드(acceptConnections)를 비동기 작업으로 스레드 풀에 제출합니다.
      */
     @Override
     public void start() {
@@ -112,15 +116,13 @@ public class TcpInNode extends OutNode {
         while (isRunning) {
             try {
                 Socket clientSocket = serverSocket.accept();
-                if (!isRunning)
-                    break;
-                executorService.submit(() -> handleClientConnection(clientSocket));
-            } catch (IOException e) {
                 if (!isRunning) {
                     log.info("서버가 정상적으로 중지되었습니다.");
-                } else {
-                    log.error("클라이언트 연결 수락 중 오류 발생", e);
+                    break;
                 }
+                executorService.submit(() -> handleClientConnection(clientSocket));
+            } catch (IOException e) {
+                log.error("클라이언트 연결 수락 중 오류 발생", e);
             }
         }
     }
@@ -162,6 +164,7 @@ public class TcpInNode extends OutNode {
      * </p>
      * 
      * @see ExecutorService#shutdown()
+     *      // 스레드 풀 종료 (현재 실행 중인 작업은 끝까지 실행)
      */
     @Override
     public void stop() {

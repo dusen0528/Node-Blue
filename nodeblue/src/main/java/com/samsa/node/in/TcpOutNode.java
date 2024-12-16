@@ -49,7 +49,7 @@ public class TcpOutNode extends InNode {
      * @param inPort 메시지를 수신할 입력 포트 ({@link InPort} 인스턴스)
      */
     public TcpOutNode(String host, int port, InPort inPort) {
-        super(inPort);
+        super(inPort); //
         this.host = host;
         this.port = port;
     }
